@@ -56,26 +56,40 @@ def get_screen_resolution(device_id):
     width, height = int(resolution[0]), int(resolution[1])
     return width, height
 
-# Hàm vuốt màn hình từ dưới lên trên (một lần vuốt thẳng)
-def swipe_screen(device_id):
+# Hàm vuốt màn hình theo đường chéo ngẫu nhiên
+def swipe_screen(device_id, direction):
     screen_width, screen_height = get_screen_resolution(device_id)
-    start_y = random.randint(int(screen_height * 0.80), int(screen_height * 0.95))  # Gần đáy hơn
-    end_y = random.randint(int(screen_height * 0.05), int(screen_height * 0.20))    # Gần đỉnh hơn
-    x_start = int(screen_width * 0.5)  # Cố định ở giữa màn hình
     
-    os.system(f"adb -s {device_id} shell input swipe {x_start} {start_y} {x_start} {end_y} 200")
-    print(f"Đã vuốt màn hình trên {device_id} từ ({x_start}, {start_y}) đến ({x_start}, {end_y})")
+    # Điểm bắt đầu (bottom, 60-70% chiều cao)
+    start_y = random.randint(int(screen_height * 0.60), int(screen_height * 0.70))  # Gần đáy hơn
+    x_start = random.randint(int(screen_width * 0.15), int(screen_width * 0.75))    # Random như code của bạn
+    
+    # Điểm kết thúc (top, 15-25% chiều cao)
+    end_y = random.randint(int(screen_height * 0.15), int(screen_height * 0.25))    # Gần đỉnh hơn
+    
+    if direction == "right":
+        x_end = min(int(screen_width * 0.85), x_start + random.randint(100, 300))  # Chéo lên trên-phải
+    else:
+        x_end = max(int(screen_width * 0.15), x_start - random.randint(100, 300))  # Chéo lên trên-trái
+    
+    # Thực hiện vuốt chéo (200ms)
+    os.system(f"adb -s {device_id} shell input swipe {x_start} {start_y} {x_end} {end_y} 200")
+    print(f"Đã vuốt màn hình trên {device_id} từ ({x_start}, {start_y}) đến ({x_end}, {end_y})")
 
 # Hàm xử lý từng thiết bị với vòng lặp tìm template
 def process_device(device_id, template_path, max_swipes=5):
     screenshot_path = f"screenshot_{device_id}.png"
     swipe_count = 0
 
+    # Ngẫu nhiên chọn hướng chéo một lần cho thiết bị này
+    swipe_direction = random.choice(["left", "right"])
+    print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
+
     while swipe_count < max_swipes:
         print(f"\nXử lý thiết bị {device_id} - Lần kiểm tra {swipe_count + 1}")
         
         # Vuốt màn hình trước khi tìm template, không delay trước vuốt
-        swipe_screen(device_id)
+        swipe_screen(device_id, swipe_direction)
         
         # Chụp màn hình sau khi vuốt
         screen = capture_screen(device_id, screenshot_path)
@@ -87,9 +101,9 @@ def process_device(device_id, template_path, max_swipes=5):
         positions = find_template(screen, template_path)
 
         if positions:
-            print(f"Đã tìm thấy {len(positions)} template trên {device_id} tại các tọa độ:")
-            for i, pos in enumerate(positions):
-                print(f"[{i}] Top-left: ({pos[0]}, {pos[1]}), Bottom-right: ({pos[2]}, {pos[3]})")
+            #print(f"Đã tìm thấy {len(positions)} template trên {device_id} tại các tọa độ:")
+            #for i, pos in enumerate(positions):
+                #print(f"[{i}] Top-left: ({pos[0]}, {pos[1]}), Bottom-right: ({pos[2]}, {pos[3]})")
             
             total_positions = len(positions)
             skip_start = int(total_positions * 0.20)  # Bỏ qua 20% đầu
@@ -119,6 +133,10 @@ def process_device(device_id, template_path, max_swipes=5):
                 swipe_count += 1
         else:
             print(f"Không tìm thấy template trên {device_id}")
+            # Thêm độ trễ sau khi không tìm thấy template (5-10 giây)
+            delay_after_swipe = random.uniform(5, 10)
+            print(f"Chờ {delay_after_swipe:.2f} giây sau khi click...")
+            time.sleep(delay_after_swipe)
             swipe_count += 1
 
     if swipe_count >= max_swipes:
@@ -140,7 +158,7 @@ def main():
 
     for idx, device_id in enumerate(devices):
         print(f"\nBắt đầu xử lý thiết bị {idx + 1}: {device_id}")
-        process_device(device_id, template_path, max_swipes=5)
+        process_device(device_id, template_path, max_swipes=15)
 
 if __name__ == "__main__":
     main()

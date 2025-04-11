@@ -5,6 +5,7 @@ import subprocess
 import random
 import time
 import threading
+import json
 
 def get_connected_devices():
     result = subprocess.check_output(["adb", "devices"]).decode("utf-8")
@@ -67,7 +68,7 @@ def swipe_screen(device_id, direction):
     os.system(f"adb -s {device_id} shell input swipe {x_start} {start_y} {x_end} {end_y} 200")
     print(f"Đã vuốt màn hình trên {device_id} từ ({x_start}, {start_y}) đến ({x_end}, {end_y})")
 
-def process_device(device_id, template_configs, duration_minutes=15):
+def process_device(device_id, template_configs, duration_minutes=15, results_dict=None):
     screenshot_path = f"screenshot_{device_id}.png"
     swipe_count = 0
     
@@ -77,9 +78,11 @@ def process_device(device_id, template_configs, duration_minutes=15):
         "save": random.randint(5, 8),
         "follow": random.randint(3, 10)
     }
+    # Đếm số lần click cho từng hành động
+    action_counts = {"like": 0, "save": 0, "follow": 0}
     
     swipe_direction = random.choice(["left", "right"])
-    #print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
+    print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
     
     start_time = time.time()
     end_time = start_time + (duration_minutes * 60)
@@ -90,8 +93,7 @@ def process_device(device_id, template_configs, duration_minutes=15):
         
         swipe_screen(device_id, swipe_direction)
         
-        # Delay ngẫu nhiên sau khi vuốt (3-7 giây)
-        delay_after_swipe = random.uniform(3, 7)
+        delay_after_swipe = random.uniform(5, 8)
         print(f"Chờ {delay_after_swipe:.2f} giây sau khi vuốt...")
         time.sleep(delay_after_swipe)
         
@@ -120,13 +122,14 @@ def process_device(device_id, template_configs, duration_minutes=15):
                         selected_position = positions[random_index]
                         #print(f"Chọn template {action} tại index {random_index}: Top-left: ({selected_position[0]}, {selected_position[1]}), Bottom-right: ({selected_position[2]}, {selected_position[3]})")
                         
-                        delay_before_click = random.uniform(8, 15)
+                        delay_before_click = random.uniform(8, 13)
                         print(f"Chờ {delay_before_click:.2f} giây trước khi {action}...")
                         time.sleep(delay_before_click)
                         
                         click_template(device_id, selected_position, action)
+                        action_counts[action] += 1  # Tăng số lần click
                         
-                        delay_after_click = random.uniform(8, 15)
+                        delay_after_click = random.uniform(4, 8)
                         print(f"Chờ {delay_after_click:.2f} giây sau khi {action}...")
                         time.sleep(delay_after_click)
                         
@@ -144,8 +147,15 @@ def process_device(device_id, template_configs, duration_minutes=15):
         
         swipe_count += 1
 
-    print(f"Đã chạy hết {duration_minutes} phút trên {device_id}, kết thúc xử lý. Tổng cộng {swipe_count} lần vuốt.")
-    delay = random.uniform(3, 5)
+    # Lưu kết quả vào results_dict
+    results_dict[device_id] = {
+        "like": action_counts["like"],
+        "save": action_counts["save"],
+        "follow": action_counts["follow"],
+        "total_swipes": swipe_count
+    }
+    
+    delay = random.uniform(5, 10)
     print(f"Chờ {delay:.2f} giây trước khi kết thúc xử lý thiết bị {device_id}...")
     time.sleep(delay)
 
@@ -164,10 +174,10 @@ def main():
     print(f"Đã tìm thấy {len(devices)} thiết bị: {devices}")
 
     duration_minutes = 15  # Có thể thay đổi thành 10, 20, 30, v.v.
-
+    results = {}  # Dictionary để lưu kết quả từ tất cả các thiết bị
     threads = []
     for idx, device_id in enumerate(devices):
-        thread = threading.Thread(target=process_device, args=(device_id, template_configs, duration_minutes))
+        thread = threading.Thread(target=process_device, args=(device_id, template_configs, duration_minutes, results))
         threads.append(thread)
         print(f"Đã tạo luồng cho thiết bị {idx + 1}: {device_id}")
 
@@ -176,7 +186,10 @@ def main():
 
     for thread in threads:
         thread.join()
-
+# Ghi kết quả vào file JSON
+    with open("results.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=4)
+    print("Đã lưu kết quả vào file 'results.json'.")
     print("Đã hoàn thành xử lý tất cả các thiết bị.")
 
 if __name__ == "__main__":

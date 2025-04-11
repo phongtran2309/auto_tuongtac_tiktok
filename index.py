@@ -33,7 +33,8 @@ def find_template(screen, template_path):
     screen_gray = cv2.cvtColor(screen, cv2.COLOR_BGR2GRAY)
     w, h = template.shape[::-1]
     result = cv2.matchTemplate(screen_gray, template, cv2.TM_CCOEFF_NORMED)
-    threshold = 0.8
+    #threshold = 0.5 # Ngưỡng phát hiện template của J7pro
+    threshold = 0.8 # Ngưỡng phát hiện template của A600
     loc = np.where(result >= threshold)
     positions = []
     for pt in zip(*loc[::-1]):
@@ -66,7 +67,7 @@ def swipe_screen(device_id, direction):
         x_end = max(int(screen_width * 0.15), x_start - random.randint(100, 300))
     
     os.system(f"adb -s {device_id} shell input swipe {x_start} {start_y} {x_end} {end_y} 200")
-    print(f"Đã vuốt màn hình trên {device_id} từ ({x_start}, {start_y}) đến ({x_end}, {end_y})")
+    #print(f"Đã vuốt màn hình trên {device_id} từ ({x_start}, {start_y}) đến ({x_end}, {end_y})")
 
 def process_device(device_id, template_configs, duration_minutes=15, results_dict=None):
     screenshot_path = f"screenshot_{device_id}.png"
@@ -83,7 +84,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
     action_counts = {"like": 0, "save": 0, "follow": 0, "share": 0} 
     
     swipe_direction = random.choice(["left", "right"])
-    print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
+    #print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
     
     start_time = time.time()
     end_time = start_time + (duration_minutes * 60)
@@ -94,7 +95,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
         
         swipe_screen(device_id, swipe_direction)
         
-        delay_after_swipe = random.uniform(5, 8)
+        delay_after_swipe = random.uniform(2, 3.5)
         print(f"Chờ {delay_after_swipe:.2f} giây sau khi vuốt...")
         time.sleep(delay_after_swipe)
         
@@ -134,8 +135,8 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                             time.sleep(delay_before_link)
                             
                             screen_after_share = capture_screen(device_id, screenshot_path)
-                            link_positions = find_template(screen_after_share, "link.png")
-                            x_positions = find_template(screen_after_share, "x.png")
+                            link_positions = find_template(screen_after_share, "./template/link.png")
+                            x_positions = find_template(screen_after_share, "./template/x.png")
                             if link_positions:
                                 link_index = random.randint(0, len(link_positions) - 1)
                                 link_position = link_positions[link_index]
@@ -162,7 +163,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                 time.sleep(delay_before_escape)
                                 
                                 click_template(device_id, escape_position, "thoát popup share")
-                        delay_after_click = random.uniform(4, 8)
+                        delay_after_click = random.uniform(3, 4.5)
                         print(f"Chờ {delay_after_click:.2f} giây sau khi {action}...")
                         time.sleep(delay_after_click)
                         
@@ -195,10 +196,10 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
 
 def main():
     template_configs = {
-        "like": {"path": "like.png", "probability": 0.4, "min_skip_range": (1, 3)},
-        "save": {"path": "save.png", "probability": 0.2, "min_skip_range": (5, 10)},
-        "follow": {"path": "follow.png", "probability": 0.25, "min_skip_range": (3, 8)},
-        "share": {"path": "share.png", "probability": 0.1, "min_skip_range": (2, 6)}
+        "like": {"path": "./template/like.png", "probability": 0.4, "min_skip_range": (1, 3)},
+        "save": {"path": "./template/save.png", "probability": 0.2, "min_skip_range": (5, 10)},
+        "follow": {"path": "./template/follow.png", "probability": 0.25, "min_skip_range": (3, 8)},
+        "share": {"path": "./template/share.png", "probability": 0.1, "min_skip_range": (2, 6)}
     }
     
     devices = get_connected_devices()
@@ -208,7 +209,7 @@ def main():
 
     print(f"Đã tìm thấy {len(devices)} thiết bị: {devices}")
 
-    duration_minutes = 15  # Có thể thay đổi thành 10, 20, 30, v.v.
+    duration_minutes = 30  # Có thể thay đổi thành 10, 20, 30, v.v.
     results = {}  # Dictionary để lưu kết quả từ tất cả các thiết bị
     threads = []
     for idx, device_id in enumerate(devices):

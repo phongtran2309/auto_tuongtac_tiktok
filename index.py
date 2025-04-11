@@ -4,14 +4,13 @@ import os
 import subprocess
 import random
 import time
+import threading
 
-# Hàm lấy danh sách thiết bị Android kết nối qua ADB
 def get_connected_devices():
     result = subprocess.check_output(["adb", "devices"]).decode("utf-8")
     devices = [line.split("\t")[0] for line in result.strip().splitlines()[1:] if line]
     return devices
 
-# Hàm chụp màn hình từ một thiết bị Android cụ thể
 def capture_screen(device_id, output_path="screenshot.png"):
     os.system(f"adb -s {device_id} shell screencap /sdcard/screenshot.png")
     os.system(f"adb -s {device_id} pull /sdcard/screenshot.png {output_path}")
@@ -20,7 +19,6 @@ def capture_screen(device_id, output_path="screenshot.png"):
         print(f"Không thể đọc ảnh màn hình từ {output_path}")
     return screen
 
-# Hàm tìm template (mẫu ảnh) trên màn hình
 def find_template(screen, template_path):
     if not os.path.exists(template_path):
         print(f"Không tìm thấy file template tại: {template_path}")
@@ -38,10 +36,9 @@ def find_template(screen, template_path):
     loc = np.where(result >= threshold)
     positions = []
     for pt in zip(*loc[::-1]):
-        positions.append((pt[0], pt[1], pt[0] + w, pt[1] + h))  # (x_min, y_min, x_max, y_max)
+        positions.append((pt[0], pt[1], pt[0] + w, pt[1] + h))
     return positions
 
-# Hàm click ngẫu nhiên trong phạm vi một vùng tọa độ
 def click_template(device_id, position):
     x_min, y_min, x_max, y_max = position
     x_random = random.randint(x_min, x_max)
@@ -49,38 +46,31 @@ def click_template(device_id, position):
     os.system(f"adb -s {device_id} shell input tap {x_random} {y_random}")
     print(f"Đã click ngẫu nhiên tại ({x_random}, {y_random}) trên {device_id}")
 
-# Hàm lấy độ phân giải màn hình thực tế của thiết bị
 def get_screen_resolution(device_id):
     result = subprocess.check_output(f"adb -s {device_id} shell wm size").decode("utf-8")
     resolution = result.split(":")[1].strip().split("x")
     width, height = int(resolution[0]), int(resolution[1])
     return width, height
 
-# Hàm vuốt màn hình theo đường chéo ngẫu nhiên
 def swipe_screen(device_id, direction):
     screen_width, screen_height = get_screen_resolution(device_id)
     
-    # Điểm bắt đầu (bottom, 60-70% chiều cao)
-    start_y = random.randint(int(screen_height * 0.60), int(screen_height * 0.70))  # Gần đáy hơn
-    x_start = random.randint(int(screen_width * 0.15), int(screen_width * 0.75))    # Random như code của bạn
+    start_y = random.randint(int(screen_height * 0.60), int(screen_height * 0.70))
+    x_start = random.randint(int(screen_width * 0.15), int(screen_width * 0.75))
     
-    # Điểm kết thúc (top, 15-25% chiều cao)
-    end_y = random.randint(int(screen_height * 0.15), int(screen_height * 0.25))    # Gần đỉnh hơn
-    
+    end_y = random.randint(int(screen_height * 0.15), int(screen_height * 0.25))
     if direction == "right":
-        x_end = min(int(screen_width * 0.85), x_start + random.randint(100, 300))  # Chéo lên trên-phải
-    else:
-        x_end = max(int(screen_width * 0.15), x_start - random.randint(100, 300))  # Chéo lên trên-trái
+        x_end = min(int(screen_width * 0.85), x_start + random.randint(100, 300))
+    else:  # direction == "left"
+        x_end = max(int(screen_width * 0.15), x_start - random.randint(100, 300))
     
-    # Thực hiện vuốt chéo (200ms)
-    os.system(f"adb -s {device_id} shell input swipe {x_start} {start_y} {x_end} {end_y} 200")
+    os.system(f"adb -s {device_id} shell input swipe {x_start} {start_y} {x_end} {end_y} 190")
     print(f"Đã vuốt màn hình trên {device_id} từ ({x_start}, {start_y}) đến ({x_end}, {end_y})")
 
-# Hàm xử lý từng thiết bị với vòng lặp tìm template
 def process_device(device_id, template_path, max_swipes=5):
     screenshot_path = f"screenshot_{device_id}.png"
     swipe_count = 0
-
+    
     # Ngẫu nhiên chọn hướng chéo một lần cho thiết bị này
     swipe_direction = random.choice(["left", "right"])
     print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
@@ -88,16 +78,13 @@ def process_device(device_id, template_path, max_swipes=5):
     while swipe_count < max_swipes:
         print(f"\nXử lý thiết bị {device_id} - Lần kiểm tra {swipe_count + 1}")
         
-        # Vuốt màn hình trước khi tìm template, không delay trước vuốt
         swipe_screen(device_id, swipe_direction)
         
-        # Chụp màn hình sau khi vuốt
         screen = capture_screen(device_id, screenshot_path)
         if screen is None:
             print(f"Không thể xử lý thiết bị {device_id}")
             break
 
-        # Tìm các vị trí của template trên màn hình
         positions = find_template(screen, template_path)
 
         if positions:
@@ -106,8 +93,8 @@ def process_device(device_id, template_path, max_swipes=5):
                 #print(f"[{i}] Top-left: ({pos[0]}, {pos[1]}), Bottom-right: ({pos[2]}, {pos[3]})")
             
             total_positions = len(positions)
-            skip_start = int(total_positions * 0.20)  # Bỏ qua 20% đầu
-            skip_end = int(total_positions * 0.15)    # Bỏ qua 15% cuối
+            skip_start = int(total_positions * 0.20)
+            skip_end = int(total_positions * 0.15)
             valid_range = total_positions - skip_start - skip_end
             
             if valid_range > 0:
@@ -115,14 +102,12 @@ def process_device(device_id, template_path, max_swipes=5):
                 selected_position = positions[random_index]
                 print(f"Chọn template tại index {random_index}: Top-left: ({selected_position[0]}, {selected_position[1]}), Bottom-right: ({selected_position[2]}, {selected_position[3]})")
                 
-                # Thêm độ trễ trước khi click (5-10 giây)
                 delay_before_click = random.uniform(5, 10)
                 print(f"Chờ {delay_before_click:.2f} giây trước khi click...")
                 time.sleep(delay_before_click)
                 
                 click_template(device_id, selected_position)
                 
-                # Thêm độ trễ sau khi click (5-10 giây)
                 delay_after_click = random.uniform(5, 10)
                 print(f"Chờ {delay_after_click:.2f} giây sau khi click...")
                 time.sleep(delay_after_click)
@@ -133,19 +118,14 @@ def process_device(device_id, template_path, max_swipes=5):
                 swipe_count += 1
         else:
             print(f"Không tìm thấy template trên {device_id}")
-            # Thêm độ trễ sau khi không tìm thấy template (5-10 giây)
-            delay_after_swipe = random.uniform(5, 10)
-            print(f"Chờ {delay_after_swipe:.2f} giây sau khi click...")
-            time.sleep(delay_after_swipe)
             swipe_count += 1
 
     if swipe_count >= max_swipes:
         print(f"Đã vuốt {max_swipes} lần nhưng không tìm thấy template đủ điều kiện trên {device_id}")
         delay = random.uniform(5, 10)
-        print(f"Chờ {delay:.2f} giây trước khi chuyển thiết bị tiếp theo...")
+        print(f"Chờ {delay:.2f} giây trước khi kết thúc xử lý thiết bị {device_id}...")
         time.sleep(delay)
 
-# Chương trình chính
 def main():
     template_path = "like.png"
     devices = get_connected_devices()
@@ -156,9 +136,22 @@ def main():
 
     print(f"Đã tìm thấy {len(devices)} thiết bị: {devices}")
 
+    # Tạo danh sách các luồng cho từng thiết bị
+    threads = []
     for idx, device_id in enumerate(devices):
-        print(f"\nBắt đầu xử lý thiết bị {idx + 1}: {device_id}")
-        process_device(device_id, template_path, max_swipes=15)
+        thread = threading.Thread(target=process_device, args=(device_id, template_path, 5))
+        threads.append(thread)
+        print(f"Đã tạo luồng cho thiết bị {idx + 1}: {device_id}")
+
+    # Khởi động tất cả các luồng đồng thời
+    for thread in threads:
+        thread.start()
+
+    # Đợi tất cả các luồng hoàn thành
+    for thread in threads:
+        thread.join()
+
+    print("Đã hoàn thành xử lý tất cả các thiết bị.")
 
 if __name__ == "__main__":
     main()

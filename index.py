@@ -72,14 +72,15 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
     screenshot_path = f"screenshot_{device_id}.png"
     swipe_count = 0
     
-    skip_counts = {"like": 0, "save": 0, "follow": 0}
+    skip_counts = {"like": 0, "save": 0, "follow": 0, "share": 0}
     min_skips = {
         "like": random.randint(1, 3),
         "save": random.randint(5, 8),
-        "follow": random.randint(3, 10)
+        "follow": random.randint(3, 10),
+        "share": random.randint(4, 9)
     }
     # Đếm số lần click cho từng hành động
-    action_counts = {"like": 0, "save": 0, "follow": 0}
+    action_counts = {"like": 0, "save": 0, "follow": 0, "share": 0} 
     
     swipe_direction = random.choice(["left", "right"])
     print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
@@ -105,11 +106,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
         for action, config in template_configs.items():
             positions = find_template(screen, config["path"])
             
-            if positions:
-                #print(f"Đã tìm thấy {len(positions)} template {action} trên {device_id} tại các tọa độ:")
-                #for i, pos in enumerate(positions):
-                    #print(f"[{i}] Top-left: ({pos[0]}, {pos[1]}), Bottom-right: ({pos[2]}, {pos[3]})")
-                
+            if positions:                
                 total_positions = len(positions)
                 skip_start = int(total_positions * 0.20)
                 skip_end = int(total_positions * 0.15)
@@ -128,7 +125,43 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                         
                         click_template(device_id, selected_position, action)
                         action_counts[action] += 1  # Tăng số lần click
-                        
+
+                        # Xử lý đặc biệt cho "share"
+                        if action == "share":
+                            # Chụp màn hình lại sau khi bấm share
+                            delay_before_link = random.uniform(1, 1.5)
+                            print(f"Chờ {delay_before_link:.2f} giây trước khi tìm link...")
+                            time.sleep(delay_before_link)
+                            
+                            screen_after_share = capture_screen(device_id, screenshot_path)
+                            link_positions = find_template(screen_after_share, "link.png")
+                            x_positions = find_template(screen_after_share, "x.png")
+                            if link_positions:
+                                link_index = random.randint(0, len(link_positions) - 1)
+                                link_position = link_positions[link_index]
+                                print(f"Tìm thấy template link tại: Top-left: ({link_position[0]}, {link_position[1]})")
+                                
+                                delay_before_link_click = random.uniform(1.5, 2)
+                                print(f"Chờ {delay_before_link_click:.2f} giây trước khi click link...")
+                                time.sleep(delay_before_link_click)
+                                
+                                click_template(device_id, link_position, "click link")
+                                action_counts["share"] += 1  # Tăng thêm lần nữa nếu bấm link thành công
+                            elif x_positions:
+                                delay_before_x = random.uniform(1.5, 2)
+                                time.sleep(delay_before_x)
+                                print("Không tìm thấy template link.png chờ {delay_before_x:.2f} giây trước khi click x...")
+                                click_template(device_id, x_positions, "click link")
+                            else:
+                                screen_width, screen_height = get_screen_resolution(device_id)
+                                escape_x = random.randint(int(screen_width * 0.25), int(screen_width * 0.75))
+                                escape_y = random.randint(0, int(screen_height * 0.85))  # Nửa trên màn hình
+                                escape_position = (escape_x, escape_y, escape_x, escape_y)  # Định dạng tương
+                                delay_before_escape = random.uniform(1.5, 2)
+                                print(f"Không tìm thấy link.png và x.png, chờ {delay_before_escape:.2f} giây trước khi click thoát tại ({escape_x}, {escape_y})...")
+                                time.sleep(delay_before_escape)
+                                
+                                click_template(device_id, escape_position, "thoát popup share")
                         delay_after_click = random.uniform(4, 8)
                         print(f"Chờ {delay_after_click:.2f} giây sau khi {action}...")
                         time.sleep(delay_after_click)
@@ -152,6 +185,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
         "like": action_counts["like"],
         "save": action_counts["save"],
         "follow": action_counts["follow"],
+        "share": action_counts["share"],
         "total_swipes": swipe_count
     }
     
@@ -162,8 +196,9 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
 def main():
     template_configs = {
         "like": {"path": "like.png", "probability": 0.4, "min_skip_range": (1, 3)},
-        "save": {"path": "save.png", "probability": 0.1, "min_skip_range": (5, 10)},
-        "follow": {"path": "follow.png", "probability": 0.25, "min_skip_range": (3, 8)}
+        "save": {"path": "save.png", "probability": 0.2, "min_skip_range": (5, 10)},
+        "follow": {"path": "follow.png", "probability": 0.25, "min_skip_range": (3, 8)},
+        "share": {"path": "share.png", "probability": 0.1, "min_skip_range": (2, 6)}
     }
     
     devices = get_connected_devices()

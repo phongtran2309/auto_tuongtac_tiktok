@@ -73,15 +73,16 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
     screenshot_path = f"screenshot_{device_id}.png"
     swipe_count = 0
     
-    skip_counts = {"like": 0, "save": 0, "follow": 0, "share": 0}
+    skip_counts = {"like": 0, "save": 0, "follow": 0, "share": 0, "comment": 0}
     min_skips = {
         "like": random.randint(1, 3),
         "save": random.randint(5, 8),
         "follow": random.randint(3, 10),
-        "share": random.randint(4, 9)
+        "share": random.randint(4, 9),
+        "comment": random.randint(2, 6)
     }
     # Đếm số lần click cho từng hành động
-    action_counts = {"like": 0, "save": 0, "follow": 0, "share": 0} 
+    action_counts = {"like": 0, "save": 0, "follow": 0, "share": 0, "comment": 0} 
     
     swipe_direction = random.choice(["left", "right"])
     #print(f"Thiết bị {device_id} sẽ vuốt chéo theo hướng: {swipe_direction}")
@@ -118,7 +119,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                     if should_action and skip_counts[action] >= min_skips[action]:
                         random_index = random.randint(skip_start, total_positions - skip_end - 1)
                         selected_position = positions[random_index]
-                        #print(f"Chọn template {action} tại index {random_index}: Top-left: ({selected_position[0]}, {selected_position[1]}), Bottom-right: ({selected_position[2]}, {selected_position[3]})")
+                        print(f"Chọn template {action} tại index {random_index}: Top-left: ({selected_position[0]}, {selected_position[1]}), Bottom-right: ({selected_position[2]}, {selected_position[3]})")
                         
                         delay_before_click = random.uniform(8, 13)
                         print(f"Chờ {delay_before_click:.2f} giây trước khi {action}...")
@@ -127,6 +128,134 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                         click_template(device_id, selected_position, action)
                         action_counts[action] += 1  # Tăng số lần click
 
+                        # Xử lý đặc biệt cho "comment"
+                        if action == "comment":
+                            # Chụp màn hình sau khi bấm comment
+                            delay_before_icon = random.uniform(5, 8)
+                            print(f"Chờ {delay_before_icon:.2f} giây trước khi tìm icon...")
+                            time.sleep(delay_before_icon)
+                            
+                            screen_after_comment = capture_screen(device_id, screenshot_path)
+                            icon_positions = find_template(screen_after_comment, "./template/icon.png")
+                            
+                            if icon_positions:
+                                icon_index = random.randint(0, len(icon_positions) - 1)
+                                icon_position = icon_positions[icon_index]
+                                print(f"Tìm thấy template icon tại: Top-left: ({icon_position[0]}, {icon_position[1]})")
+                                
+                                delay_before_icon_click = random.uniform(1, 1.5)
+                                print(f"Chờ {delay_before_icon_click:.2f} giây trước khi click icon...")
+                                time.sleep(delay_before_icon_click)
+                                
+                                click_template(device_id, icon_position, "click icon")
+                                
+                                # Kiểm tra send.png
+                                delay_before_send = random.uniform(1, 1.5)
+                                print(f"Chờ {delay_before_send:.2f} giây trước khi tìm send...")
+                                time.sleep(delay_before_send)
+                                
+                                screen_after_icon = capture_screen(device_id, screenshot_path)
+                                send_positions = find_template(screen_after_icon, "./template/send.png")
+                                
+                                if send_positions:
+                                    send_index = random.randint(0, len(send_positions) - 1)
+                                    send_position = send_positions[send_index]
+                                    print(f"Tìm thấy template send tại: Top-left: ({send_position[0]}, {send_position[1]})")
+                                    
+                                    # Nhập giá trị vào input
+                                    os.system(f"adb -s {device_id} shell input text 'Nice video!'")
+                                    print("Đã nhập 'Nice video!' vào input")
+                                    
+                                    delay_before_cmt = random.uniform(5, 6)
+                                    print(f"Chờ {delay_before_cmt:.2f} giây trước khi tìm cmt...")
+                                    time.sleep(delay_before_cmt)
+                                    
+                                    screen_after_input = capture_screen(device_id, screenshot_path)
+                                    cmt_positions = find_template(screen_after_input, "./template/cmt.png")
+                                    
+                                    if cmt_positions:
+                                        cmt_index = random.randint(0, len(cmt_positions) - 1)
+                                        cmt_position = cmt_positions[cmt_index]
+                                        print(f"Tìm thấy template cmt tại: Top-left: ({cmt_position[0]}, {cmt_position[1]})")
+                                        
+                                        delay_before_cmt_click = random.uniform(5, 6)
+                                        print(f"Chờ {delay_before_cmt_click:.2f} giây trước khi click cmt...")
+                                        time.sleep(delay_before_cmt_click)
+                                        
+                                        click_template(device_id, cmt_position, "click cmt")
+                                        action_counts["comment"] += 1
+                                    
+                                    # Thoát khung comment sau khi hoàn tất (bấm cmt hoặc không tìm thấy cmt)
+                                    delay_before_x = random.uniform(1, 1.5)
+                                    print(f"Chờ {delay_before_x:.2f} giây trước khi tìm x để thoát comment...")
+                                    time.sleep(delay_before_x)
+                                    
+                                    screen_after_cmt = capture_screen(device_id, screenshot_path)
+                                    x_positions = find_template(screen_after_cmt, "./template/x.png")
+                                    
+                                    if x_positions:
+                                        x_index = random.randint(0, len(x_positions) - 1)
+                                        x_position = x_positions[x_index]
+                                        print(f"Tìm thấy template x tại: Top-left: ({x_position[0]}, {x_position[1]})")
+                                        
+                                        delay_before_x_click = random.uniform(1, 1.5)
+                                        print(f"Chờ {delay_before_x_click:.2f} giây trước khi click x...")
+                                        time.sleep(delay_before_x_click)
+                                        
+                                        click_template(device_id, x_position, "click x")
+                                    else:
+                                        print("Không tìm thấy template x.png, thoát khung comment bằng cách bấm ngoài màn hình...")
+                                        screen_width, screen_height = get_screen_resolution(device_id)
+                                        escape_x = random.randint(int(screen_width * 0.25), int(screen_width * 0.75))
+                                        escape_y = random.randint(0, int(screen_height * 0.5))
+                                        escape_position = (escape_x, escape_y, escape_x, escape_y)
+                                        
+                                        delay_before_escape1 = random.uniform(1, 2)
+                                        print(f"Chờ {delay_before_escape1:.2f} giây trước khi click thoát lần 1...")
+                                        time.sleep(delay_before_escape1)
+                                        click_template(device_id, escape_position, "thoát khung comment lần 1")
+                                        
+                                        delay_between_escape = random.uniform(1, 2)
+                                        print(f"Chờ {delay_between_escape:.2f} giây trước khi click thoát lần 2...")
+                                        time.sleep(delay_between_escape)
+                                        click_template(device_id, escape_position, "thoát khung comment lần 2")
+                                else:
+                                    print("Không tìm thấy template send.png, thoát khung comment...")
+                                    delay_before_x = random.uniform(1, 1.5)
+                                    print(f"Chờ {delay_before_x:.2f} giây trước khi tìm x để thoát comment...")
+                                    time.sleep(delay_before_x)
+                                    
+                                    screen_after_icon = capture_screen(device_id, screenshot_path)
+                                    x_positions = find_template(screen_after_icon, "./template/x.png")
+                                    
+                                    if x_positions:
+                                        x_index = random.randint(0, len(x_positions) - 1)
+                                        x_position = x_positions[x_index]
+                                        print(f"Tìm thấy template x tại: Top-left: ({x_position[0]}, {x_position[1]})")
+                                        
+                                        delay_before_x_click = random.uniform(1, 1.5)
+                                        print(f"Chờ {delay_before_x_click:.2f} giây trước khi click x...")
+                                        time.sleep(delay_before_x_click)
+                                        
+                                        click_template(device_id, x_position, "click x")
+                                    else:
+                                        print("Không tìm thấy template x.png, thoát khung comment bằng cách bấm ngoài màn hình...")
+                                        screen_width, screen_height = get_screen_resolution(device_id)
+                                        escape_x = random.randint(int(screen_width * 0.25), int(screen_width * 0.75))
+                                        escape_y = random.randint(0, int(screen_height * 0.5))
+                                        escape_position = (escape_x, escape_y, escape_x, escape_y)
+                                        
+                                        delay_before_escape1 = random.uniform(1, 2)
+                                        print(f"Chờ {delay_before_escape1:.2f} giây trước khi click thoát lần 1...")
+                                        time.sleep(delay_before_escape1)
+                                        click_template(device_id, escape_position, "thoát khung comment lần 1")
+                                        
+                                        delay_between_escape = random.uniform(1, 2)
+                                        print(f"Chờ {delay_between_escape:.2f} giây trước khi click thoát lần 2...")
+                                        time.sleep(delay_between_escape)
+                                        click_template(device_id, escape_position, "thoát khung comment lần 2")
+                            else:
+                                print("Không tìm thấy template icon.png sau khi bấm comment")
                         # Xử lý đặc biệt cho "share"
                         if action == "share":
                             # Chụp màn hình lại sau khi bấm share
@@ -187,6 +316,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
         "save": action_counts["save"],
         "follow": action_counts["follow"],
         "share": action_counts["share"],
+        "comment": action_counts["comment"],
         "total_swipes": swipe_count
     }
     
@@ -199,7 +329,8 @@ def main():
         "like": {"path": "./template/like.png", "probability": 0.4, "min_skip_range": (1, 3)},
         "save": {"path": "./template/save.png", "probability": 0.2, "min_skip_range": (5, 10)},
         "follow": {"path": "./template/follow.png", "probability": 0.25, "min_skip_range": (3, 8)},
-        "share": {"path": "./template/share.png", "probability": 0.1, "min_skip_range": (2, 6)}
+        "share": {"path": "./template/share.png", "probability": 0.1, "min_skip_range": (2, 6)},
+        "comment": {"path": "./template/comment.png", "probability": 0.35, "min_skip_range": (3, 7)} 
     }
     
     devices = get_connected_devices()

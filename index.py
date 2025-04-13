@@ -6,6 +6,13 @@ import random
 import time
 import threading
 import json
+from bot import generate_random_comment
+import google.generativeai as genai
+import re
+
+API_KEY = "AIzaSyARv0WwzI817I27XRCRvX7SzjzoZe0luPs"
+genai.configure(api_key=API_KEY)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 def get_connected_devices():
     result = subprocess.check_output(["adb", "devices"]).decode("utf-8")
@@ -130,6 +137,35 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
 
                         # Xử lý đặc biệt cho "comment"
                         if action == "comment":
+                            response = model.generate_content(
+                                            """
+                                            Generate one optimistic comment in English for a random TikTok video.
+                                                The comment must:
+                                                - Be exactly 5-8 words long.
+                                                - Be positive, casual, and TikTok-friendly (e.g., "This video is super fun vibe").
+                                                - Be unique and creative each time, avoiding repetition.
+                                                - Avoid special characters like quotes (' or "), exclamation marks (!), or punctuation other than spaces.
+                                                - Be safe for all audiences.
+                                                Examples:
+                                                - "Really cool dance moves"
+                                                - "Your vibe is amazing"
+                                                - "This video rocks big time"
+                                                - "Super fun content keep it up"
+                                            """, generation_config=genai.types.GenerationConfig(
+                                                temperature=1.0,  # Tăng sáng tạo
+                                            ))
+                            if response:
+                                comment = response.text.strip()
+                                comment = re.sub(r'\n|\r', '', comment)  # Loại bỏ xuống dòng (\n, \r)
+                            else:
+                                fallback_comments = [
+                                "This video is super cool",
+                                "Love your awesome vibe",
+                                "Really fun content keep going",
+                                "Great moves in this clip",
+                                "Your video rocks big time"
+                                ]
+                                comment = random.choice(fallback_comments)
                             # Chụp màn hình sau khi bấm comment
                             delay_before_icon = random.uniform(5, 8)
                             print(f"Chờ {delay_before_icon:.2f} giây trước khi tìm icon...")
@@ -160,11 +196,10 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                 if send_positions:
                                     send_index = random.randint(0, len(send_positions) - 1)
                                     send_position = send_positions[send_index]
-                                    print(f"Tìm thấy template send tại: Top-left: ({send_position[0]}, {send_position[1]})")
-                                    
+                                    print(f"Tìm thấy template send tại: Top-left: ({send_position[0]}, {send_position[1]})")                              
                                     # Nhập giá trị vào input
-                                    os.system(f"adb -s {device_id} shell input text 'Nice video!'")
-                                    print("Đã nhập 'Nice video!' vào input")
+                                    os.system(f"adb -s {device_id} shell input text '{comment}'")
+                                    print(f"Đã nhập '{comment}' vào input")
                                     
                                     delay_before_cmt = random.uniform(5, 6)
                                     print(f"Chờ {delay_before_cmt:.2f} giây trước khi tìm cmt...")
@@ -330,7 +365,7 @@ def main():
         "save": {"path": "./template/save.png", "probability": 0.2, "min_skip_range": (5, 10)},
         "follow": {"path": "./template/follow.png", "probability": 0.25, "min_skip_range": (3, 8)},
         "share": {"path": "./template/share.png", "probability": 0.1, "min_skip_range": (2, 6)},
-        "comment": {"path": "./template/comment.png", "probability": 0.35, "min_skip_range": (3, 7)} 
+        "comment": {"path": "./template/comment.png", "probability": 1, "min_skip_range": (3, 7)} 
     }
     
     devices = get_connected_devices()

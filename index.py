@@ -103,7 +103,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
         
         swipe_screen(device_id, swipe_direction)
         
-        delay_after_swipe = random.uniform(2, 3.5)
+        delay_after_swipe = random.uniform(3, 13)
         print(f"Chờ {delay_after_swipe:.2f} giây sau khi vuốt...")
         time.sleep(delay_after_swipe)
         
@@ -128,7 +128,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                         selected_position = positions[random_index]
                         print(f"Chọn template {action} tại index {random_index}: Top-left: ({selected_position[0]}, {selected_position[1]}), Bottom-right: ({selected_position[2]}, {selected_position[3]})")
                         
-                        delay_before_click = random.uniform(8, 13)
+                        delay_before_click = random.uniform(2, 3)
                         print(f"Chờ {delay_before_click:.2f} giây trước khi {action}...")
                         time.sleep(delay_before_click)
                         
@@ -167,7 +167,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                 ]
                                 comment = random.choice(fallback_comments)
                             # Chụp màn hình sau khi bấm comment
-                            delay_before_icon = random.uniform(5, 8)
+                            delay_before_icon = random.uniform(4, 6)
                             print(f"Chờ {delay_before_icon:.2f} giây trước khi tìm icon...")
                             time.sleep(delay_before_icon)
                             
@@ -201,7 +201,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                     os.system(f"adb -s {device_id} shell input text '{comment}'")
                                     print(f"Đã nhập '{comment}' vào input")
                                     
-                                    delay_before_cmt = random.uniform(5, 6)
+                                    delay_before_cmt = random.uniform(1.5, 2.5)
                                     print(f"Chờ {delay_before_cmt:.2f} giây trước khi tìm cmt...")
                                     time.sleep(delay_before_cmt)
                                     
@@ -213,7 +213,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                         cmt_position = cmt_positions[cmt_index]
                                         print(f"Tìm thấy template cmt tại: Top-left: ({cmt_position[0]}, {cmt_position[1]})")
                                         
-                                        delay_before_cmt_click = random.uniform(5, 6)
+                                        delay_before_cmt_click = random.uniform(1.5, 2)
                                         print(f"Chờ {delay_before_cmt_click:.2f} giây trước khi click cmt...")
                                         time.sleep(delay_before_cmt_click)
                                         
@@ -306,14 +306,14 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                 link_position = link_positions[link_index]
                                 print(f"Tìm thấy template link tại: Top-left: ({link_position[0]}, {link_position[1]})")
                                 
-                                delay_before_link_click = random.uniform(1.5, 2)
+                                delay_before_link_click = random.uniform(1.5, 2.5)
                                 print(f"Chờ {delay_before_link_click:.2f} giây trước khi click link...")
                                 time.sleep(delay_before_link_click)
                                 
                                 click_template(device_id, link_position, "click link")
                                 action_counts["share"] += 1  # Tăng thêm lần nữa nếu bấm link thành công
                             elif x_positions:
-                                delay_before_x = random.uniform(1.5, 2)
+                                delay_before_x = random.uniform(1.5, 2.5)
                                 time.sleep(delay_before_x)
                                 print("Không tìm thấy template link.png chờ {delay_before_x:.2f} giây trước khi click x...")
                                 click_template(device_id, x_positions, "click link")
@@ -327,7 +327,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                 time.sleep(delay_before_escape)
                                 
                                 click_template(device_id, escape_position, "thoát popup share")
-                        delay_after_click = random.uniform(3, 4.5)
+                        delay_after_click = random.uniform(2.5, 4.5)
                         print(f"Chờ {delay_after_click:.2f} giây sau khi {action}...")
                         time.sleep(delay_after_click)
                         
@@ -355,7 +355,7 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
         "total_swipes": swipe_count
     }
     
-    delay = random.uniform(5, 10)
+    delay = random.uniform(2, 3)
     print(f"Chờ {delay:.2f} giây trước khi kết thúc xử lý thiết bị {device_id}...")
     time.sleep(delay)
 
@@ -365,7 +365,7 @@ def main():
         "save": {"path": "./template/save.png", "probability": 0.2, "min_skip_range": (5, 10)},
         "follow": {"path": "./template/follow.png", "probability": 0.25, "min_skip_range": (3, 8)},
         "share": {"path": "./template/share.png", "probability": 0.1, "min_skip_range": (2, 6)},
-        "comment": {"path": "./template/comment.png", "probability": 1, "min_skip_range": (3, 7)} 
+        "comment": {"path": "./template/comment.png", "probability": 0.3, "min_skip_range": (3, 7)} 
     }
     
     devices = get_connected_devices()

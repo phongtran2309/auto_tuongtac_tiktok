@@ -204,8 +204,8 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                         comment = "This video is really cool"
                                         print("Comment rỗng, dùng giá trị mặc định")
                                     escaped_comment = comment.replace("'", "\\'").replace(" ", "\\ ")
-                                    os.system(f"adb -s {device_id} shell input text '{escaped_comment}'")
-                                    print(f"Đã nhập '{escaped_comment}' vào input")
+                                    os.system(f"adb -s {device_id} shell input text '{comment}'")
+                                    print(f"Đã nhập '{comment}' vào input")
                                     
                                     delay_before_cmt = random.uniform(1.5, 2.5)
                                     print(f"Chờ {delay_before_cmt:.2f} giây trước khi tìm cmt...")

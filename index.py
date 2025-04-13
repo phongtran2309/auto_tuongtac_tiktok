@@ -137,35 +137,36 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
 
                         # Xử lý đặc biệt cho "comment"
                         if action == "comment":
-                            response = model.generate_content(
-                                            """
-                                            Generate one optimistic comment in English for a random TikTok video.
-                                                The comment must:
-                                                - Be exactly 5-8 words long.
-                                                - Be positive, casual, and TikTok-friendly (e.g., "This video is super fun vibe").
-                                                - Be unique and creative each time, avoiding repetition.
-                                                - Avoid special characters like quotes (' or "), exclamation marks (!), or punctuation other than spaces.
-                                                - Be safe for all audiences.
-                                                Examples:
-                                                - "Really cool dance moves"
-                                                - "Your vibe is amazing"
-                                                - "This video rocks big time"
-                                                - "Super fun content keep it up"
-                                            """, generation_config=genai.types.GenerationConfig(
-                                                temperature=1.0,  # Tăng sáng tạo
-                                            ))
-                            if response:
-                                comment = response.text.strip()
-                                comment = re.sub(r'\n|\r', '', comment)  # Loại bỏ xuống dòng (\n, \r)
-                            else:
-                                fallback_comments = [
-                                "This video is super cool",
-                                "Love your awesome vibe",
-                                "Really fun content keep going",
-                                "Great moves in this clip",
-                                "Your video rocks big time"
-                                ]
-                                comment = random.choice(fallback_comments)
+                            # response = model.generate_content(
+                            #                 """
+                            #                 Generate one optimistic comment in English for a random TikTok video.
+                            #                     The comment must:
+                            #                     - Be exactly 5-8 words long.
+                            #                     - Be positive, casual, and TikTok-friendly (e.g., "This video is super fun vibe").
+                            #                     - Be unique and creative each time, avoiding repetition.
+                            #                     - Avoid special characters like quotes (' or "), exclamation marks (!), or punctuation other than spaces.
+                            #                     - Be safe for all audiences.
+                            #                     Examples:
+                            #                     - "Really cool dance moves"
+                            #                     - "Your vibe is amazing"
+                            #                     - "This video rocks big time"
+                            #                     - "Super fun content keep it up"
+                            #                 """, generation_config=genai.types.GenerationConfig(
+                            #                     temperature=1.0,  # Tăng sáng tạo
+                            #                 ))
+                            # if response:
+                            #     comment = response.text.strip()
+                            #     comment = re.sub(r'\n|\r', '', comment)  # Loại bỏ xuống dòng (\n, \r)
+                            # else:
+                            #     fallback_comments = [
+                            #     "This video is super cool",
+                            #     "Love your awesome vibe",
+                            #     "Really fun content keep going",
+                            #     "Great moves in this clip",
+                            #     "Your video rocks big time"
+                            #     ]
+                            #     comment = random.choice(fallback_comments)
+
                             # Chụp màn hình sau khi bấm comment
                             delay_before_icon = random.uniform(4, 6)
                             print(f"Chờ {delay_before_icon:.2f} giây trước khi tìm icon...")
@@ -198,8 +199,13 @@ def process_device(device_id, template_configs, duration_minutes=15, results_dic
                                     send_position = send_positions[send_index]
                                     print(f"Tìm thấy template send tại: Top-left: ({send_position[0]}, {send_position[1]})")                              
                                     # Nhập giá trị vào input
-                                    os.system(f"adb -s {device_id} shell input text '{comment}'")
-                                    print(f"Đã nhập '{comment}' vào input")
+                                    comment = generate_random_comment()
+                                    if not comment:
+                                        comment = "This video is really cool"
+                                        print("Comment rỗng, dùng giá trị mặc định")
+                                    escaped_comment = comment.replace("'", "\\'").replace(" ", "\\ ")
+                                    os.system(f"adb -s {device_id} shell input text '{escaped_comment}'")
+                                    print(f"Đã nhập '{escaped_comment}' vào input")
                                     
                                     delay_before_cmt = random.uniform(1.5, 2.5)
                                     print(f"Chờ {delay_before_cmt:.2f} giây trước khi tìm cmt...")

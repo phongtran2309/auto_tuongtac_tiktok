@@ -1,77 +1,82 @@
+# bot.py
 import random
 
-# Danh sách từ vựng tiếng Anh cho comment
-comment_nouns = [
-    "photo", "video", "post", "article", "picture", "music", "voice", "smile", "friend", "family",
-    "cat", "dog", "flower", "sea", "sky", "star", "sun", "moon", "dream", "love",
-    "time", "work", "trip", "nature", "snow", "rain", "wind", "cherry", "summer", "winter",
-    "comment", "question", "reply", "idea", "feeling", "emotion", "surprise", "laugh", "tear", "hope",
-    "support", "thanks", "news", "info", "event", "game", "movie", "book", "food", "taste"
+# Danh sách từ vựng mở rộng
+adjectives = [
+    "awesome", "cool", "great", "amazing", "fun", "super", "nice", "lovely",
+    "fantastic", "perfect", "sweet", "happy", "epic", "brilliant", "fab",
+    "stellar", "rad", "groovy", "neat", "vibrant", "dazzling", "snappy",
+    "fresh", "lively", "bold", "crisp", "sleek", "sharp", "dynamic",
+    "charming", "grand", "classy", "smooth"
 ]
-comment_adjectives = [
-    "cute", "pretty", "funny", "fun", "happy", "awesome", "wonderful", "great", "lovely", "touching",
-    "tasty", "cool", "kind", "strong", "fast", "beautiful", "favorite", "perfect", "amazing", "genius",
-    "surprising", "excited", "joyful", "lonely", "nostalgic", "simple", "complex", "fresh", "rare", "normal",
-    "energetic", "tired", "busy", "quiet", "noisy", "bright", "dark", "warm", "cool", "cold",
-    "hot", "sweet", "spicy", "sour", "bitter", "soft", "hard", "light", "heavy", "quick"
+nouns = [
+    "video", "vibe", "dance", "content", "clip", "beat", "style", "energy",
+    "move", "song", "art", "moment", "flow", "mood", "groove", "scene",
+    "rhythm", "spark", "wave", "jam", "tune", "spirit", "flair", "pulse",
+    "journey", "creation", "magic", "vlog", "trend", "blast", "show",
+    "story", "craft", "passion"
 ]
-comment_verbs = [
-    "see", "hear", "read", "write", "say", "laugh", "cry", "surprise", "feel", "like",
-    "support", "wait", "take", "use", "make", "eat", "drink", "play", "sing", "dance",
-    "think", "know", "teach", "learn", "remember", "forget", "praise", "try", "enjoy", "start",
-    "end", "continue", "change", "grow", "decrease", "send", "receive", "return", "call", "meet",
-    "come", "go", "return", "sleep", "wake", "run", "fly", "swim", "draw", "feel"
+verbs = [
+    "love", "like", "enjoy", "dig", "feel", "rock", "shine", "slay",
+    "keep", "make", "bring", "share", "spark", "nail", "crush",
+    "groove", "vibe", "flow", "dance", "jam", "craft", "build", "push",
+    "grow", "light", "kick", "roll", "spin", "blend", "lift",
+    "inspire", "create", "drive"
 ]
-particles_endings = [
-    "", "it", "so", "too", "yeah", "wow", "please", "maybe", "ok", "now",
-    "and", "or", "but", "for", "with", "at", "on", "in", "to", "up"
+intensifiers = [
+    "so", "really", "totally", "pretty", "such", "very", "quite",
+    "kinda", "mega", "uber", "truly", "mad", "pure", "extra", "",
+    "fully", "super", "insanely", "wildly", ""
 ]
-icons = [
-    "😊", "😂", "😍", "😢", "😡", "😱", "😴", "😎", "🥳", "🤗",
-    "😘", "😜", "😳", "😇", "🤓", "🥰", "😔", "😤", "😩", "🤔",
-    "🌸", "🌹", "🌺", "🌻", "🌼", "🌷", "🍂", "🍁", "🌲", "🌳",
-    "🌴", "🌵", "🌾", "🌿", "🍃", "🌊", "🏞️", "⛰️", "🌋", "🏝️",
-    "☀️", "🌞", "🌤️", "⛅", "🌥️", "☁️", "🌧️", "⛈️", "🌩️", "⚡",
-    "❄️", "☃️", "⛄", "🌬️", "💧", "🌈", "🌪️", "🌫️", "☔", "🌂",
-    "🐱", "🐶", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮",
-    "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦅", "🦇", "🐺",
-    "🐴", "🦄", "🐝", "🐞", "🦋", "🐌", "🐍", "🦎", "🐢", "🐙",
-    "🍎", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍒", "🍍", "🥭",
-    "🍑", "🍐", "🥝", "🍅", "🥑", "🍔", "🍕", "🍟", "🌭", "🍜",
-    "🍣", "🍤", "🍦", "🍰", "🎂", "🍪", "🍫", "☕", "🍵", "🥤",
-    "📚", "✏️", "🖌️", "🎨", "🎧", "🎤", "🎸", "🎹", "🥁", "🎻",
-    "📷", "📸", "🎥", "📺", "💻", "📱", "⌚", "⏰", "💡", "🔋",
-    "🔧", "🔨", "⚙️", "✂️", "📦", "🎁", "🖼️", "🕯️", "🧸", "🎀",
-    "🚗", "🚙", "🚌", "🚐", "🚚", "🚜", "🏍️", "🚲", "🛵", "✈️",
-    "🚁", "🚤", "⛵", "🚢", "🚀", "🛸", "🚉", "🚃", "🚅", "🛤️",
-    "❤️", "💛", "💚", "💙", "💜", "🖤", "🤍", "💔", "💖", "💞",
-    "✨", "⭐", "🌟", "💫", "🔥", "💥", "🎉", "🎊", "🎈", "🎇",
-    "💌", "✉️", "📩", "📞", "🔊", "🔇", "🔔", "🚨", "⏳", "⌛",
-    "✅", "❌", "✔️", "✖️", "➡️", "⬅️", "⬆️", "⬇️", "🔄", "🔍"
+subjects = [
+    "this", "your", "that", "the", ""
+]
+endings = [
+    "it up", "going", "this", "that", "on", "it", "",
+    "all day", "big time", "for real", "non stop", "like crazy",
+    "with style", "so hard", "right now", "every day", ""
 ]
 
-# Hàm chọn ngẫu nhiên
-def get_random_element(array):
-    return random.choice(array)
-
-# Hàm tạo comment ngẫu nhiên
 def generate_random_comment():
+    # Nhiều cấu trúc câu để tăng tổ hợp
     structures = [
-        f"{get_random_element(comment_nouns)} {get_random_element(particles_endings)} {get_random_element(comment_adjectives)}",
-        f"{get_random_element(comment_adjectives)} {get_random_element(particles_endings)}",
-        f"{get_random_element(comment_nouns)} {get_random_element(particles_endings)} {get_random_element(comment_verbs)}",
-        f"{get_random_element(comment_adjectives)} {get_random_element(particles_endings)}",
-        f"{get_random_element(comment_verbs)} {get_random_element(particles_endings)}",
-        f"{get_random_element(comment_nouns)} {get_random_element(particles_endings)} {get_random_element(comment_adjectives)} {get_random_element(comment_verbs)}",
-        f"{get_random_element(comment_nouns)} {get_random_element(particles_endings)} {get_random_element(comment_adjectives)}",
-        f"{get_random_element(comment_adjectives)} {get_random_element(comment_nouns)}",
-        f"{get_random_element(comment_verbs)} {get_random_element(particles_endings)}",
-        f"{get_random_element(comment_nouns)} {get_random_element(particles_endings)}{get_random_element(comment_adjectives)}"
+        lambda: f"{random.choice(subjects).capitalize()} {random.choice(nouns)} is {random.choice(intensifiers)} {random.choice(adjectives)} {random.choice(endings)}",
+        lambda: f"{random.choice(verbs).capitalize()} {random.choice(intensifiers)} {random.choice(adjectives)} {random.choice(nouns)} {random.choice(endings)}",
+        lambda: f"{random.choice(adjectives).capitalize()} {random.choice(nouns)} {random.choice(verbs)} {random.choice(intensifiers)} {random.choice(endings)}",
+        lambda: f"{random.choice(intensifiers).capitalize()} {random.choice(adjectives)} {random.choice(nouns)} is {random.choice(adjectives)} {random.choice(endings)}",
+        lambda: f"{random.choice(verbs).capitalize()} this {random.choice(intensifiers)} {random.choice(adjectives)} {random.choice(nouns)}",
+        lambda: f"{random.choice(adjectives).capitalize()} {random.choice(nouns)} {random.choice(endings)} {random.choice(adjectives)} {random.choice(endings)}",
+        lambda: f"{random.choice(subjects).capitalize()} {random.choice(nouns)} {random.choice(verbs)} {random.choice(adjectives)} {random.choice(nouns)} {random.choice(endings)}",
+        lambda: f"{random.choice(intensifiers).capitalize()} {random.choice(adjectives)} {random.choice(nouns)} {random.choice(verbs)} {random.choice(endings)}",
+        lambda: f"{random.choice(verbs).capitalize()} {random.choice(adjectives)} {random.choice(nouns)} {random.choice(intensifiers)} {random.choice(endings)}",
+        lambda: f"{random.choice(adjectives).capitalize()} {random.choice(nouns)} is {random.choice(verbs)} {random.choice(intensifiers)} {random.choice(adjectives)}"
     ]
-    comment = get_random_element(structures)
+    
+    comment = random.choice(structures)()
+    
+    # Làm sạch: chỉ giữ chữ, số, dấu cách
+    comment = "".join(c for c in comment if c.isalnum() or c.isspace())
+    comment = " ".join(comment.split())  # Loại bỏ dấu cách thừa
+    
+    # Kiểm tra 5-8 từ
+    words = comment.split()
+    word_count = len(words)
+    if word_count < 5 or word_count > 8:
+        # Dự phòng: cấu trúc đơn giản
+        comment = f"{random.choice(verbs).capitalize()} this {random.choice(intensifiers)} {random.choice(adjectives)} {random.choice(nouns)} {random.choice(endings)}"
+        comment = "".join(c for c in comment if c.isalnum() or c.isspace())
+        comment = " ".join(comment.split())
+    
+    print(f"Đã tạo comment: {comment}")
     return comment
 
 # Test hàm
 if __name__ == "__main__":
-    comment = generate_random_comment()
-    print(f"{comment}")
+    print("Bắt đầu test random comment...")
+    unique_comments = set()
+    for i in range(20):  # Test 20 comment
+        comment = generate_random_comment()
+        unique_comments.add(comment)
+        print(f"Comment {i+1}: {comment}")
+    print(f"Số comment duy nhất: {len(unique_comments)}")
+    print("Kết thúc test.")
